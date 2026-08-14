@@ -1,0 +1,14 @@
+E:\LP J2 script\LP J2 script\bin\Debug\net10.0\LP J2 script.exe
+E:\LP J2 script\LP J2 script\bin\Debug\net10.0\LP J2 script.deps.json
+E:\LP J2 script\LP J2 script\bin\Debug\net10.0\LP J2 script.runtimeconfig.json
+E:\LP J2 script\LP J2 script\bin\Debug\net10.0\LP J2 script.dll
+E:\LP J2 script\LP J2 script\bin\Debug\net10.0\LP J2 script.pdb
+E:\LP J2 script\LP J2 script\obj\Debug\net10.0\LP J2 script.GeneratedMSBuildEditorConfig.editorconfig
+E:\LP J2 script\LP J2 script\obj\Debug\net10.0\LP J2 script.AssemblyInfoInputs.cache
+E:\LP J2 script\LP J2 script\obj\Debug\net10.0\LP J2 script.AssemblyInfo.cs
+E:\LP J2 script\LP J2 script\obj\Debug\net10.0\LP J2 script.csproj.CoreCompileInputs.cache
+E:\LP J2 script\LP J2 script\obj\Debug\net10.0\LP J2 script.dll
+E:\LP J2 script\LP J2 script\obj\Debug\net10.0\refint\LP J2 script.dll
+E:\LP J2 script\LP J2 script\obj\Debug\net10.0\LP J2 script.pdb
+E:\LP J2 script\LP J2 script\obj\Debug\net10.0\LP J2 script.genruntimeconfig.cache
+E:\LP J2 script\LP J2 script\obj\Debug\net10.0\ref\LP J2 script.dll

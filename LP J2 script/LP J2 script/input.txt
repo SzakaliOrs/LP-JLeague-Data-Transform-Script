@@ -1,0 +1,3 @@
+Season	Tournaments	Sec	Date	Kick-off	Home	Score	Away	Venue	Att.
+2026/27	J2	1st Day 7th Sec	Fri 09/18/26	13:00	Hachinohe	2-1	Miyazaki	Prifoods.S	 
+2026/27	J2	2nd Day 7th Sec	Sat 09/19/26	14:00	Sapporo	vs	Oita	PREMIST	 
