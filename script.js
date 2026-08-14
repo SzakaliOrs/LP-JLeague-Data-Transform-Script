@@ -203,8 +203,10 @@ function convert(inputText, league, season) {
     const homeScoreStr = score ? String(score.home) : "";
     const awayScoreStr = score ? String(score.away) : "";
 
+    const dateLine = m.kickoff ? `${date} - ${m.kickoff}{{Abbr/JST}}` : date;
+
     out.push(`|{{Match|finished=${finished}`);
-    out.push(`    |date=${date} - ${m.kickoff}{{Abbr/JST}}`);
+    out.push(`    |date=${dateLine}`);
     out.push("    |comment=");
     out.push(`    |opponent1={{TeamOpponent|${home}|score=${homeScoreStr}}}`);
     out.push(`    |opponent2={{TeamOpponent|${away}|score=${awayScoreStr}}}`);
