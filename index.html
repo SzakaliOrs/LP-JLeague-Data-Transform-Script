@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J-League Schedule Converter</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>J-League Schedule → Liquipedia Converter</h1>
+
+<div class="options">
+  <label for="league">League
+    <select id="league">
+      <option value="J1" selected>J1</option>
+      <option value="J2">J2</option>
+      <option value="J3">J3</option>
+    </select>
+  </label>
+  <label for="season">Season
+    <select id="season"></select>
+  </label>
+</div>
+
+<figure class="hint">
+  <p>On the J-League schedule search results page, select the results table — from the <strong>Season</strong> column through the <strong>Away</strong> column — copy it, and paste it into the box below.</p>
+  <img src="example-schedule.png" alt="Example: J-League schedule search results table, showing the Season through Away columns to select and copy.">
+</figure>
+
+<div class="converter">
+  <textarea id="input" placeholder="Paste the tab-separated schedule export here..." spellcheck="false"></textarea>
+
+  <div class="controls">
+    <button id="convertBtn">Convert →</button>
+    <p id="status"></p>
+  </div>
+
+  <div class="output-wrap">
+    <textarea id="output" placeholder="Output will appear here..." spellcheck="false" readonly></textarea>
+    <button id="copyBtn" type="button">Copy</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
