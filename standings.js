@@ -112,7 +112,8 @@ function buildBg(params, teamCount, warnings = []) {
   return entries
     .map((entry, i) => {
       if (!KNOWN_BGS.has(entry.value)) warnings.push(`unknown bg: ${entry.value}`);
-      const end = i + 1 < entries.length ? entries[i + 1].n - 1 : teamCount;
+      // With no known team count the last range covers just its own row.
+      const end = i + 1 < entries.length ? entries[i + 1].n - 1 : Math.max(teamCount, entry.n);
       const range = end > entry.n ? `${entry.n}-${end}` : `${entry.n}`;
       return `${range}=${entry.value}`;
     })
@@ -142,28 +143,34 @@ function defaultMatchgroupPrefix(title) {
   return initials + (seasonMatch ? seasonCode(seasonMatch[0]) : "");
 }
 
-// options: { roundCount, prefix, started, finished } — blank/NaN roundCount
-// and blank prefix fall back to the defaults derived from the input: the
-// matchGroupIdN params when present, otherwise a double round robin and a
-// prefix built from the title. A typed-in prefix overrides matchGroupIdN.
+// options: { roundCount, prefix, started, finished, extraTeams } — blank/NaN
+// roundCount and blank prefix fall back to the defaults derived from the
+// input: the matchGroupIdN params when present, otherwise the round count
+// implied by rounds= and a prefix built from the title. A typed-in prefix
+// overrides matchGroupIdN.
 function convertSwissTableLeague(wikitext, options = {}) {
   if (!/^\s*\{\{\s*SwissTableLeague\s*\|/i.test(wikitext)) {
     return { output: "", warnings: [], error: "Input must start with {{SwissTableLeague|..." };
   }
 
   const params = parseSwissTableLeague(wikitext);
-  // Empty slots (teams not announced yet) still count towards the table size
-  // for bg ranges and the round count, but get no {{TeamOpponent}} line.
-  const teamSlots = numberedParams(params, "team", true);
-  if (teamSlots.length === 0) {
-    return { output: "", warnings: [], error: "No team1=, team2=, ... entries found." };
-  }
+  // Manually added teams fill empty slots (teams not announced yet) in
+  // order, and any left over are appended. Slots still empty after that
+  // count towards the table size for bg ranges and the round count, but get
+  // no {{TeamOpponent}} line.
+  const extraTeams = [...(options.extraTeams || [])];
+  const teamSlots = numberedParams(params, "team", true)
+    .map((entry) => entry.value || extraTeams.shift() || "");
+  teamSlots.push(...extraTeams);
   const teamCount = teamSlots.length;
-  const teams = teamSlots.map((entry) => entry.value).filter((team) => team !== "");
+  const teams = teamSlots.filter((team) => team !== "");
 
   const warnings = [];
   if (teams.length < teamCount) {
     warnings.push(`${teamCount - teams.length} of ${teamCount} team slots are empty and were skipped`);
+  }
+  if (teamCount === 0) {
+    warnings.push("no team slots, so the last bg range and the round count can't use the team count");
   }
   const title = params.title || "";
   if (!title) warnings.push("no title= found");
@@ -179,7 +186,9 @@ function convertSwissTableLeague(wikitext, options = {}) {
 
   const roundCount = options.roundCount > 0
     ? options.roundCount
-    : useMatchGroupIds ? lastMatchGroupRound : defaultRoundCount(teamCount, parseInt(params.rounds, 10));
+    : useMatchGroupIds ? lastMatchGroupRound
+    : teamCount > 0 ? defaultRoundCount(teamCount, parseInt(params.rounds, 10))
+    : parseInt(params.rounds, 10) || 0;
   // Rounds without a matchGroupIdN (or every round, when a prefix is typed in)
   // get {prefix}R{nn}; "J1L2627R01" -> prefix "J1L2627".
   const prefix = options.prefix
@@ -195,6 +204,8 @@ function convertSwissTableLeague(wikitext, options = {}) {
   out.push(`|title=${title}`);
   out.push(`|bg=${buildBg(params, teamCount, warnings)}`);
   out.push(`|points=${POINTS}`);
+  // No teams to list -> let the template pull them from the matches.
+  if (teams.length === 0) out.push("|importopponents=true");
 
   for (let round = 1; round <= roundCount; round++) {
     const matchgroup = (useMatchGroupIds && matchGroupIds.get(round))
@@ -226,6 +237,10 @@ function runConversion() {
     prefix: document.getElementById("prefix").value.trim(),
     started: readNumber("started"),
     finished: readNumber("finished"),
+    extraTeams: document.getElementById("extraTeams").value
+      .split("\n")
+      .map((team) => team.trim())
+      .filter((team) => team !== ""),
   });
 
   if (result.error) {

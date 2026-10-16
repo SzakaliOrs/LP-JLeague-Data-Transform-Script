@@ -169,6 +169,7 @@ h1 {
 
 .options {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 1.5rem;
   margin-bottom: 1.25rem;
@@ -189,6 +190,16 @@ h1 {
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.options .team-list {
+  flex: none;
+  width: 14rem;
+  min-height: 0;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  font-family: inherit;
   font-size: 0.9rem;
 }
 

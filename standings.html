@@ -23,6 +23,9 @@
   <label for="prefix">Matchgroup prefix
     <input type="text" id="prefix" placeholder="auto">
   </label>
+  <label for="extraTeams">Add teams
+    <textarea id="extraTeams" class="team-list" rows="3" placeholder="One team per line" spellcheck="false"></textarea>
+  </label>
 </div>
 
 <ul class="notes">
@@ -31,6 +34,7 @@
   <li>Otherwise <strong>Total rounds</strong> is worked out from the team count and the old <code>rounds=</code> (games per team): 12 teams and <code>rounds=33</code> → 3 legs → 33 rounds. With an odd team count one team sits out each round, so 13 teams and <code>rounds=24</code> → 2 legs of 13 → 26 rounds.</li>
   <li>Otherwise <strong>Matchgroup prefix</strong> defaults to the title's initials plus the season, e.g. "Bangladesh Football League 2026-27" → <code>BFL2627</code>, giving <code>BFL2627R01</code>, <code>BFL2627R02</code>, ...</li>
   <li>Round titles use <code>roundtitle=</code> if set (e.g. "Matchweek 1"), otherwise "Round 1".</li>
+  <li><strong>Add teams</strong> (one per line) fills empty <code>teamN=</code> slots in order, then adds any extra teams to the end. Slots that stay empty are left out. If no teams are left at all, the output gets <code>|importopponents=true</code> instead.</li>
   <li>Rounds up to <strong>Rounds finished</strong> get <code>started=1|finished=1</code>; rounds up to <strong>Rounds started</strong> get <code>started=1|finished=0</code>.</li>
 </ul>
 
