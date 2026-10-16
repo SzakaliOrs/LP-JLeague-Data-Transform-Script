@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Standings Converter</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="back-link" href="index.html">← Back to leagues</a>
+<h1>SwissTableLeague → SwissStandings Converter</h1>
+
+<div class="options">
+  <label for="started">Rounds started
+    <input type="number" id="started" min="0" value="0">
+  </label>
+  <label for="finished">Rounds finished
+    <input type="number" id="finished" min="0" value="0">
+  </label>
+  <label for="roundCount">Total rounds
+    <input type="number" id="roundCount" min="1" placeholder="auto">
+  </label>
+  <label for="prefix">Matchgroup prefix
+    <input type="text" id="prefix" placeholder="auto">
+  </label>
+</div>
+
+<ul class="notes">
+  <li>Paste a whole <code>{{SwissTableLeague|...}}</code> block into the left box.</li>
+  <li>If the input has <code>matchGroupId1=</code>, <code>matchGroupId2=</code>, ..., those ids and that round count are used as-is (typing a <strong>Matchgroup prefix</strong> overrides them).</li>
+  <li>Otherwise <strong>Total rounds</strong> defaults to a double round robin for the team count (13 teams → 26 rounds, since one team sits out each round). The old <code>rounds=</code> value is games per team, so it isn't used.</li>
+  <li>Otherwise <strong>Matchgroup prefix</strong> defaults to the title's initials plus the season, e.g. "Bangladesh Football League 2026-27" → <code>BFL2627</code>, giving <code>BFL2627R01</code>, <code>BFL2627R02</code>, ...</li>
+  <li>Round titles use <code>roundtitle=</code> if set (e.g. "Matchweek 1"), otherwise "Round 1".</li>
+  <li>Rounds up to <strong>Rounds finished</strong> get <code>started=1|finished=1</code>; rounds up to <strong>Rounds started</strong> get <code>started=1|finished=0</code>.</li>
+</ul>
+
+<div class="converter">
+  <textarea id="input" placeholder="Paste {{SwissTableLeague|...}} here..." spellcheck="false"></textarea>
+
+  <div class="controls">
+    <button id="convertBtn">Convert →</button>
+    <p id="status"></p>
+  </div>
+
+  <div class="output-wrap">
+    <textarea id="output" placeholder="Output will appear here..." spellcheck="false" readonly></textarea>
+    <button id="copyBtn" type="button">Copy</button>
+  </div>
+</div>
+
+<script src="common.js"></script>
+<script src="standings.js"></script>
+</body>
+</html>

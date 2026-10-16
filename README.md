@@ -10,6 +10,7 @@ Live at **[j-league-converter.centaur-projects.uk](https://j-league-converter.ce
 - `index.html` — landing page, pick a league.
 - `jleague.html?league=J1|J2|J3` — J-League converter (shared page, `league` set via URL).
 - `csl.html` — Chinese Super League converter (file upload; parsing not yet implemented).
+- `standings.html` — converts an old `{{SwissTableLeague}}` block into `{{SwissStandings}}`.
 
 More leagues will be added as buttons on the landing page over time.
 
@@ -45,6 +46,8 @@ up in the schedule export.
   format (`{league}L{season}R{round}`, split-year seasons).
 - `csl.js` — Chinese Super League page logic (calendar-year seasons;
   conversion itself is a stub pending a sample export and club list).
+- `standings.js` — SwissTableLeague → SwissStandings conversion (tiebreaker
+  renames, bg ranges, round/matchgroup generation).
 
 ## Development
 
