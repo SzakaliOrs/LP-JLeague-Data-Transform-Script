@@ -2,11 +2,25 @@ if (typeof require !== "undefined") {
   Object.assign(global, require("./common.js"));
 }
 
-// Old {{SwissTableLeague}} tiebreaker names that don't just lowercase into
-// their {{SwissStandings}} equivalent (e.g. gameDiff -> gamediff works as-is).
+// Old {{SwissTableLeague}} tiebreaker names that don't normalize into their
+// {{SwissStandings}} equivalent (see normalizeTiebreaker).
 const TIEBREAKER_RENAMES = {
   diff: "gamediff",
 };
+
+// Spelled-out old names -> new id style: "games won" -> "gamewins",
+// "matches lost" -> "matchlosses", "Game Difference" -> "gamediff",
+// "gameDiff" -> "gamediff".
+function normalizeTiebreaker(name) {
+  return name
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "")
+    .replace(/^(game|match|round)e?s(?!core)/, "$1")
+    .replace(/won$/, "wins")
+    .replace(/lost$/, "losses")
+    .replace(/(drawn|drew)$/, "draws")
+    .replace(/difference$/, "diff");
+}
 
 // Tiebreaker ids accepted by {{SwissStandings}}, plus the context prefixes
 // ("ml.matchdiff") they can take. Anything else is flagged.
@@ -22,10 +36,10 @@ const TIEBREAKER_CONTEXTS = new Set(["full", "ml", "h2hlegacy"]);
 function convertTiebreaker(name, warnings) {
   const dot = name.lastIndexOf(".");
   const context = dot === -1 ? "" : name.slice(0, dot).toLowerCase();
-  const base = name.slice(dot + 1);
+  const base = normalizeTiebreaker(name.slice(dot + 1));
   const converted = Object.prototype.hasOwnProperty.call(TIEBREAKER_RENAMES, base)
     ? TIEBREAKER_RENAMES[base]
-    : base.toLowerCase();
+    : base;
 
   if (!KNOWN_TIEBREAKERS.has(converted) || (context && !TIEBREAKER_CONTEXTS.has(context))) {
     warnings.push(`unknown tiebreaker: ${name}`);
@@ -75,15 +89,16 @@ function parseSwissTableLeague(wikitext) {
   return result;
 }
 
-// Collects numbered params (team1, team2, ... / pbg1, pbg11, ...) sorted by number.
-function numberedParams(params, prefix) {
+// Collects numbered params (team1, team2, ... / pbg1, pbg11, ...) sorted by
+// number, skipping blank ones unless keepEmpty is set.
+function numberedParams(params, prefix, keepEmpty = false) {
   const pattern = new RegExp(`^${prefix}(\\d+)$`);
   return Object.keys(params)
     .map((key) => {
       const match = key.match(pattern);
       return match ? { n: parseInt(match[1], 10), value: params[key] } : null;
     })
-    .filter((entry) => entry && entry.value !== "")
+    .filter((entry) => entry && (keepEmpty || entry.value !== ""))
     .sort((a, b) => a.n - b.n);
 }
 
@@ -104,10 +119,15 @@ function buildBg(params, teamCount, warnings = []) {
     .join(", ");
 }
 
-// Double round robin: an odd team count needs an extra round per leg since
-// one team sits out each round.
-function defaultRoundCount(teamCount) {
-  return teamCount % 2 === 0 ? 2 * (teamCount - 1) : 2 * teamCount;
+// Round robin over however many legs the old rounds= (games per team) implies
+// — 38 games with 20 teams is 2 legs, 33 with 12 is 3 — defaulting to 2 legs.
+// An odd team count needs an extra round per leg since one team sits out
+// each round (13 teams, 24 games -> 2 legs of 13 rounds = 26).
+function defaultRoundCount(teamCount, gamesPerTeam) {
+  const legs = gamesPerTeam > 0 && teamCount > 1
+    ? Math.max(1, Math.round(gamesPerTeam / (teamCount - 1)))
+    : 2;
+  return legs * (teamCount % 2 === 0 ? teamCount - 1 : teamCount);
 }
 
 // "Bangladesh Football League 2026-27" -> "BFL2627"
@@ -132,12 +152,19 @@ function convertSwissTableLeague(wikitext, options = {}) {
   }
 
   const params = parseSwissTableLeague(wikitext);
-  const teams = numberedParams(params, "team").map((entry) => entry.value);
-  if (teams.length === 0) {
+  // Empty slots (teams not announced yet) still count towards the table size
+  // for bg ranges and the round count, but get no {{TeamOpponent}} line.
+  const teamSlots = numberedParams(params, "team", true);
+  if (teamSlots.length === 0) {
     return { output: "", warnings: [], error: "No team1=, team2=, ... entries found." };
   }
+  const teamCount = teamSlots.length;
+  const teams = teamSlots.map((entry) => entry.value).filter((team) => team !== "");
 
   const warnings = [];
+  if (teams.length < teamCount) {
+    warnings.push(`${teamCount - teams.length} of ${teamCount} team slots are empty and were skipped`);
+  }
   const title = params.title || "";
   if (!title) warnings.push("no title= found");
 
@@ -152,7 +179,7 @@ function convertSwissTableLeague(wikitext, options = {}) {
 
   const roundCount = options.roundCount > 0
     ? options.roundCount
-    : useMatchGroupIds ? lastMatchGroupRound : defaultRoundCount(teams.length);
+    : useMatchGroupIds ? lastMatchGroupRound : defaultRoundCount(teamCount, parseInt(params.rounds, 10));
   // Rounds without a matchGroupIdN (or every round, when a prefix is typed in)
   // get {prefix}R{nn}; "J1L2627R01" -> prefix "J1L2627".
   const prefix = options.prefix
@@ -166,7 +193,7 @@ function convertSwissTableLeague(wikitext, options = {}) {
   out.push("{{SwissStandings");
   out.push(`|tiebreakers={{Json|${tiebreakers.join("|")}}}`);
   out.push(`|title=${title}`);
-  out.push(`|bg=${buildBg(params, teams.length, warnings)}`);
+  out.push(`|bg=${buildBg(params, teamCount, warnings)}`);
   out.push(`|points=${POINTS}`);
 
   for (let round = 1; round <= roundCount; round++) {
