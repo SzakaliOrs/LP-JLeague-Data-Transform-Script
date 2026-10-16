@@ -1,6 +1,13 @@
-// Short name (as it appears in the schedule export) -> full name used by {{TeamOpponent|...}}.
-// Add/adjust entries here as new clubs show up in the input.
+if (typeof require !== "undefined") {
+  Object.assign(global, require("./common.js"));
+}
+
+// Short name (as it appears in the schedule export) -> full name used by
+// {{TeamOpponent|...}}, keyed by season since rosters change every year via
+// promotion/relegation. Only seasons listed here are selectable — add a new
+// season's block once its club list exists.
 const TEAM_NAMES = {
+  "2026/27": {
   // J1 2026/27
   "Kashima": "Kashima Antlers",
   "Kashiwa": "Kashiwa Reysol",
@@ -66,75 +73,18 @@ const TEAM_NAMES = {
   "Kochi": "Kochi United",
   "Nagano": "Nagano Parceiro",
   "Shiga": "Reilac Shiga",
+  },
 };
-
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
 
 function extractMatchweek(sec) {
   const match = sec.match(/(\d+)\w*\s+Sec\s*$/);
   return match ? parseInt(match[1], 10) : 0;
 }
 
-function parseDate(raw) {
-  // e.g. "Fri 09/18/26" -> the date part after the weekday abbreviation
-  const parts = raw.trim().split(/\s+/);
-  const datePart = parts.length > 1 ? parts[1] : parts[0];
-  const [mm, dd, yy] = datePart.split("/").map((n) => parseInt(n, 10));
-  return new Date(2000 + yy, mm - 1, dd);
-}
-
-function dateKey(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function formatLongDate(date) {
-  return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
-}
-
-function seasonCode(season) {
-  // "2026/27" -> "2627"; "2024" -> "2024" (both are 4 characters, for a stable 10-char id)
-  if (season.includes("/")) {
-    const [startYear, endYear] = season.split("/");
-    return `${startYear.slice(-2)}${endYear.slice(-2).padStart(2, "0")}`;
-  }
-  return season;
-}
-
-// J-League ran calendar-year seasons (1992-2025) before switching to the
-// autumn-spring format starting 2026/27. The autumn-spring list always
-// extends one season past the current year so next year's season is
-// selectable ahead of time.
-function buildSeasonOptions() {
-  const options = [];
-  for (let year = 1992; year <= 2025; year++) {
-    options.push(String(year));
-  }
-
-  const currentYear = new Date().getFullYear();
-  const lastStart = Math.max(2026, currentYear + 1);
-  for (let start = 2026; start <= lastStart; start++) {
-    options.push(`${start}/${String(start + 1).slice(-2)}`);
-  }
-
-  return options;
-}
-
-function tryParseScore(raw) {
-  // Real scores look like "2-1", "2 - 1", "2:1"; unplayed matches show "vs".
-  const match = raw.trim().match(/^(\d+)\s*[-–:]\s*(\d+)$/);
-  if (!match) return null;
-  return { home: parseInt(match[1], 10), away: parseInt(match[2], 10) };
-}
-
-function resolveTeam(shortName, unmapped) {
-  if (Object.prototype.hasOwnProperty.call(TEAM_NAMES, shortName)) {
-    return TEAM_NAMES[shortName];
+function resolveTeam(shortName, season, unmapped) {
+  const teams = TEAM_NAMES[season] || {};
+  if (Object.prototype.hasOwnProperty.call(teams, shortName)) {
+    return teams[shortName];
   }
   unmapped.add(shortName);
   return shortName;
@@ -142,8 +92,8 @@ function resolveTeam(shortName, unmapped) {
 
 // Converts a tab-separated J-League schedule export into Liquipedia wikitext.
 // `league` (J1/J2/J3) and `season` (e.g. "2024" or "2026/27") come from the
-// page's dropdowns; the round number is still read from the schedule's own
-// "Sec" column, same as before.
+// page's URL/dropdown; the round number is still read from the schedule's
+// own "Sec" column.
 function convert(inputText, league, season) {
   const lines = inputText
     .split(/\r?\n/)
@@ -195,8 +145,8 @@ function convert(inputText, league, season) {
   for (let i = 0; i < matches.length; i++) {
     const m = matches[i];
     const date = dateKey(dates[i]);
-    const home = resolveTeam(m.home, unmapped);
-    const away = resolveTeam(m.away, unmapped);
+    const home = resolveTeam(m.home, season, unmapped);
+    const away = resolveTeam(m.away, season, unmapped);
 
     const score = tryParseScore(m.score);
     const finished = score ? "true" : "";
@@ -218,15 +168,20 @@ function convert(inputText, league, season) {
   return { output: out.join("\n"), unmapped: Array.from(unmapped).sort(), error: null };
 }
 
-function currentSeason() {
-  const currentYear = new Date().getFullYear();
-  if (currentYear <= 2025) return String(currentYear);
-  return `${currentYear}/${String(currentYear + 1).slice(-2)}`;
+function currentLeagueFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const league = params.get("league");
+  return ["J1", "J2", "J3"].includes(league) ? league : "J1";
+}
+
+// Only seasons with a team list above are selectable.
+function buildJLeagueSeasonOptions() {
+  return Object.keys(TEAM_NAMES);
 }
 
 function populateSeasonSelect() {
   const seasonEl = document.getElementById("season");
-  const options = buildSeasonOptions();
+  const options = buildJLeagueSeasonOptions();
 
   for (const season of options) {
     const opt = document.createElement("option");
@@ -235,17 +190,17 @@ function populateSeasonSelect() {
     seasonEl.appendChild(opt);
   }
 
-  seasonEl.value = currentSeason();
+  seasonEl.value = options[options.length - 1];
 }
 
 function runConversion() {
   const inputEl = document.getElementById("input");
   const outputEl = document.getElementById("output");
   const statusEl = document.getElementById("status");
-  const leagueEl = document.getElementById("league");
   const seasonEl = document.getElementById("season");
+  const league = currentLeagueFromUrl();
 
-  const result = convert(inputEl.value, leagueEl.value, seasonEl.value);
+  const result = convert(inputEl.value, league, seasonEl.value);
 
   if (result.error) {
     outputEl.value = "";
@@ -258,39 +213,20 @@ function runConversion() {
   statusEl.classList.remove("status--error");
 
   if (result.unmapped.length > 0) {
-    statusEl.textContent = `Unmapped team names (used as-is — add them to TEAM_NAMES in script.js): ${result.unmapped.join(", ")}`;
+    statusEl.textContent = `Unmapped team names (used as-is — add them to TEAM_NAMES in jleague.js): ${result.unmapped.join(", ")}`;
   } else {
     statusEl.textContent = "";
   }
 }
 
-async function copyOutput() {
-  const outputEl = document.getElementById("output");
-  const copyBtn = document.getElementById("copyBtn");
-  if (!outputEl.value) return;
-
-  if (navigator.clipboard) {
-    await navigator.clipboard.writeText(outputEl.value);
-  } else {
-    outputEl.select();
-    document.execCommand("copy");
-  }
-
-  const originalLabel = copyBtn.textContent;
-  copyBtn.textContent = "Copied!";
-  copyBtn.classList.add("copied");
-  setTimeout(() => {
-    copyBtn.textContent = originalLabel;
-    copyBtn.classList.remove("copied");
-  }, 1500);
-}
-
 if (typeof document !== "undefined") {
+  const league = currentLeagueFromUrl();
+  document.title = `${league} Schedule Converter`;
+  document.getElementById("pageTitle").textContent = `${league} Schedule → Liquipedia Converter`;
   populateSeasonSelect();
   document.getElementById("convertBtn").addEventListener("click", runConversion);
-  document.getElementById("copyBtn").addEventListener("click", copyOutput);
 }
 
 if (typeof module !== "undefined") {
-  module.exports = { convert, buildSeasonOptions, seasonCode, currentSeason };
+  module.exports = { convert, buildJLeagueSeasonOptions };
 }

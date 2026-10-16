@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSL Schedule Converter</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="back-link" href="index.html">← Back to leagues</a>
+<h1>Chinese Super League Schedule → Liquipedia Converter <span class="wip-badge">WIP</span></h1>
+
+<div class="options">
+  <label for="season">Season
+    <select id="season"></select>
+  </label>
+</div>
+
+<p class="hint">Upload the CSL schedule file, then click Convert.</p>
+
+<div class="converter">
+  <div class="file-drop">
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+    <p id="fileName" class="file-name">No file selected</p>
+  </div>
+
+  <div class="controls">
+    <button id="convertBtn">Convert →</button>
+    <p id="status"></p>
+  </div>
+
+  <div class="output-wrap">
+    <textarea id="output" placeholder="Output will appear here..." spellcheck="false" readonly></textarea>
+    <button id="copyBtn" type="button">Copy</button>
+  </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="common.js"></script>
+<script src="csl.js"></script>
+</body>
+</html>

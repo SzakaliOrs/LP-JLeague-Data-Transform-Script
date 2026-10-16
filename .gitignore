@@ -5,3 +5,8 @@ Thumbs.db
 # Editors
 .vscode/
 .idea/
+
+# Local-only tooling (used to inspect sample files, never shipped)
+node_modules/
+package.json
+package-lock.json
